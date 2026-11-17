@@ -1,0 +1,342 @@
+Харківський національний університет радіоелектроніки
+Факультет комп’ютерних наук
+Кафедра програмної інженерії
+ЗВІТ
+до практичного завдання № 2
+з дисципліни «Аналіз та рефакторинг коду»
+на тему: «Методи рефакторингу коду: Rename Method, Remove Parameter, Add Parameter»
+Виконала
+ст. гр. ПЗПІ-24-5
+Яворська Каріна
+Перевірив
+ст. викладач кафедри ПІ
+Сокорчук Ігор Петрович
+Харків 2026
+1 ІСТОРІЯ ЗМІН
+Зміни, внесені до звіту під час виконання практичного завдання, наведено в таблиці 1.1.
+Таблиця 1.1 – Історія змін звіту
+№
+	Дата
+	Версія звіту
+	Опис змін та виправлень
+	1
+	15.11.2026
+	0.1
+	Створено розділ «Завдання»
+	2
+	16.11.2026
+	0.2
+	Створено розділ «Опис виконаної роботи»
+	3
+	17.11.2026
+	0.3
+	Додано розділи «Висновки», «Використані джерела» та додатки А, Б і В
+	2 ЗАВДАННЯ
+Метою роботи є ознайомлення з методами рефакторингу коду та набуття навичок визначення проблемних ділянок у коді й усунення їх без зміни поведінки програми. Для цього потрібно було обрати три методи рефакторингу, описати проблему, яку розв’язує кожен із них, навести код до і після рефакторингу мовою Ruby та пояснити переваги отриманого рішення, а також підготувати презентацію, відеодоповідь і звіт.
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+3.1 Рефакторинг і вибір методів
+Рефакторинг є зміною внутрішньої структури коду, яка робить його зрозумілішим і простішим для подальших змін, не змінюючи зовнішньої поведінки програми [1]. Для роботи обрано три методи: Rename Method (перейменування методу), Remove Parameter (видалення параметра) і Add Parameter (додавання параметра). Усі три змінюють сигнатуру методу, тобто його ім’я або список параметрів, тому їх зручно розглядати на одному прикладі. Методи застосовано до класу Loan, який описує видачу книги в бібліотеці та обчислює штраф за прострочене повернення; код написано мовою Ruby 3.4. Код усіх прикладів зібрано в одному файлі code-examples-refactoring-methods.rb: для кожного методу в ньому є модуль із кодом до рефакторингу (суфікс Before) і модуль із кодом після рефакторингу (суфікс After). Презентація складається з 12 слайдів (рисунки з Б.1 по Б.12), зміст доповіді показано на рисунку Б.2, а обрані методи на рисунку Б.3. Титульний слайд зображено на рисунку Б.1.
+3.2 Метод Rename Method
+Метод Rename Method застосовують, коли ім’я методу не пояснює його призначення: метод перейменовують так, щоб ім’я описувало результат [2]. У прикладі метод calc класу Loan обчислює штраф: кількість днів між датою повернення й терміном множиться на денну ставку DAILY_RATE, що дорівнює 5 грн, а за повернення вчасно або раніше штраф дорівнює нулю. Обчислення правильне, але ім’я calc означає лише «обчислити» і не каже, що саме: суму, кількість днів чи штраф. Щоб зрозуміти результат, доводиться читати тіло методу, а виклик loan.calc в іншій частині програми нічого не пояснює читачу.
+Після рефакторингу метод названо overdue_fine (штраф за прострочення); тіло не змінилося, тому для чотирьох днів прострочки результат той самий: 20 грн. Старий метод calc не видалено одразу, оскільки в програмі можуть залишатися його виклики: він виводить попередження про застарілість через Kernel#warn із параметром uplevel: 1, який додає до повідомлення файл і рядок виклику [3], і делегує роботу новому методу. Коли старих викликів не залишиться, calc видаляють. Коротшою альтернативою є alias_method, що дає методу друге ім’я, але без попередження [4]. Код до і після рефакторингу наведено в розділах В.1 і В.2 додатка В, слайд до рефакторингу зображено на рисунку Б.4, а після на рисунку Б.5.
+3.3 Метод Remove Parameter
+Метод Remove Parameter застосовують, коли параметр більше не використовується в тілі методу: його видаляють з оголошення та з усіх викликів [5]. У прикладі метод overdue_fine приймає ставку за день daily_rate і валюту currency, але бібліотека завжди нараховує штраф у гривнях, тому currency в тілі методу ніде не використовується. Кожен виклик змушений передавати значення 'UAH', яке ні на що не впливає, а читач коду може вирішити, що від валюти залежить результат. Такі параметри знаходять інструменти статичного аналізу: для рядка 55 RuboCop видає попередження Lint/UnusedMethodArgument [6], а Reek видає UnusedParameters [7].
+Після рефакторингу метод приймає лише daily_rate, виклик став коротшим, а результат не змінився: 20 грн; RuboCop і Reek більше не видають попереджень. Головним ризиком цього методу є пропущений виклик: Ruby не перевіряє кількість аргументів до запуску, тому старий виклик із двома аргументами завершиться помилкою ArgumentError (given 2, expected 1) лише під час виконання. Метод також можна викликати через send або public_send з іменем у вигляді символу, і текстовий пошук такого виклику може не знайти, тому після зміни обов’язково запускають тести. Код до і після рефакторингу наведено в розділах В.3 і В.4 додатка В, слайд до рефакторингу зображено на рисунку Б.6, а після на рисунку Б.7.
+3.4 Метод Add Parameter
+Метод Add Parameter застосовують, коли методу бракує даних, які може передати лише код, що його викликає: до методу додають новий параметр [8]. У прикладі бібліотека вводить пільгові дні, протягом яких після терміну повернення штраф не нараховується. Кількість таких днів залежить від категорії читача й відома лише клієнту методу, а overdue_fine приймає тільки ставку за день. Тому для чотирьох днів прострочки, з яких два пільгові, метод повертає 20 грн замість 10 грн.
+Після рефакторингу до методу додано keyword-аргумент grace_days зі значенням 0 за замовчуванням: від кількості прострочених днів віднімаються пільгові, а метод max не дає штрафу стати від’ємним. Старі виклики без нового аргументу працюють без змін і повертають той самий результат, а новий виклик overdue_fine(5, grace_days: 2) повертає 10 грн. Ім’я аргументу видно у виклику, тому не треба пам’ятати порядок параметрів, а починаючи з Ruby 3.0 позиційні й keyword-аргументи розділено, і виклик overdue_fine(5, 2) одразу завершується помилкою ArgumentError [9]. Платою за цей метод є довший список параметрів: RuboCop за замовчуванням дозволяє не більше п’яти параметрів (Metrics/ParameterLists), а Reek не більше трьох (LongParameterList) [6, 7]. Код до і після рефакторингу наведено в розділах В.5 і В.6 додатка В, слайд до рефакторингу зображено на рисунку Б.8, а після на рисунку Б.9.
+3.5 Перевірка збереження поведінки
+Оскільки рефакторинг не повинен змінювати поведінку програми, старі версії класу Loan збережено в модулях із суфіксом Before як еталон. Модуль Compare у кінці файлу code-examples-refactoring-methods.rb запускає всі шість версій методу на 10 000 випадкових парах дат (повернення від 10 днів до терміну до 30 днів після нього) і на трьох граничних випадках: повернення в день терміну, на день раніше та на день пізніше. Усього виконано 10 003 перевірки без жодної розбіжності. Остаточну версію класу Library::Loan, отриману після застосування трьох методів, покривають чотири модульні тести RSpec [10], які перевіряють нарахування штрафу, пільгові дні, повернення до терміну та роботу застарілого методу calc; усі тести проходять. Остаточну версію класу, тести й перевірку наведено в розділах В.7, В.8 і В.9 додатка В, результат запуску зображено на рисунку Б.10.
+3.6 Інструменти рефакторингу
+Для Ruby перейменування методу автоматизує RubyMine: команда Rename (Shift+F6) знаходить усі виклики й показує зміни перед застосуванням [11]. Зайві параметри та надто довгі списки параметрів виявляють RuboCop і Reek, а виклики через send не знаходить жоден інструмент, тому основною гарантією коректності залишаються тести RSpec. Ruby є динамічною мовою, і помилки в сигнатурі проявляються лише під час виконання, тому рефакторинг виконують невеликими кроками й запускають тести після кожного з них. Інструменти показано на рисунку Б.10, висновки доповіді на рисунку Б.11, а перелік джерел на рисунку Б.12.
+4 ВИСНОВКИ
+Під час виконання практичної роботи розглянуто три методи рефакторингу, що змінюють сигнатуру методу: Rename Method, Remove Parameter і Add Parameter. Кожен метод застосовано до класу Loan мовою Ruby: описано проблему, наведено код до і після рефакторингу та пояснено переваги отриманого рішення.
+З’ясовано, що перейменування робить код зрозумілим без коментарів, видалення зайвого параметра спрощує виклики, а додавання keyword-аргументу зі значенням за замовчуванням розширює метод без поломки наявних викликів. Оскільки Ruby не перевіряє виклики до запуску, кожен крок підтверджують тести, а частину проблем автоматично виявляють RuboCop і Reek. Збереження поведінки підтверджено 10 003 автоматичними перевірками без розбіжностей і чотирма тестами RSpec.
+5 ВИКОРИСТАНІ ДЖЕРЕЛА
+1. What is refactoring. Refactoring.Guru. URL: https://refactoring.guru/refactoring/what-is-refactoring (дата звернення: 17.11.2026).
+2. Rename Method. Refactoring.Guru. URL: https://refactoring.guru/rename-method (дата звернення: 17.11.2026).
+3. module Kernel. Ruby Documentation. URL: https://docs.ruby-lang.org/en/master/Kernel.html (дата звернення: 17.11.2026).
+4. class Module. Ruby Documentation. URL: https://docs.ruby-lang.org/en/master/Module.html (дата звернення: 17.11.2026).
+5. Remove Parameter. Refactoring.Guru. URL: https://refactoring.guru/remove-parameter (дата звернення: 17.11.2026).
+6. RuboCop Documentation : Cops. URL: https://docs.rubocop.org/rubocop/latest/cops.html (дата звернення: 17.11.2026).
+7. Reek : Code smell detector for Ruby. URL: https://github.com/troessner/reek (дата звернення: 17.11.2026).
+8. Add Parameter. Refactoring.Guru. URL: https://refactoring.guru/add-parameter (дата звернення: 17.11.2026).
+9. Separation of positional and keyword arguments in Ruby 3.0. URL: https://www.ruby-lang.org/en/news/2019/12/12/separation-of-positional-and-keyword-arguments-in-ruby-3-0/ (дата звернення: 17.11.2026).
+10. RSpec : Behaviour Driven Development for Ruby. URL: https://rspec.info/ (дата звернення: 17.11.2026).
+11. Rename refactorings. RubyMine Help. URL: https://www.jetbrains.com/help/ruby/rename-refactorings.html (дата звернення: 17.11.2026).
+ДОДАТОК А
+Відеозапис
+Відеозапис доповіді на YouTube: https://youtu.be/CS97VlwZunM
+Хронологічний опис відеозапису:
+00:00 Титульний слайд, тема доповіді
+00:10 Рефакторинг і обрані методи
+00:53 Rename Method: ім’я calc не пояснює дію
+01:56 Rename Method: ім’я описує результат
+03:04 Remove Parameter: невикористаний параметр currency
+04:02 Remove Parameter: метод без зайвого параметра
+04:38 Add Parameter: метод не знає про пільгові дні
+05:14 Add Parameter: новий параметр зі значенням 0
+06:02 Інструменти та перевірка результату
+06:31 Висновки
+07:06 Використані джерела
+ДОДАТОК Б
+Слайди презентації
+
+
+Рисунок Б.1 – Титульний слайд
+
+
+Рисунок Б.2 – Зміст доповіді
+
+
+Рисунок Б.3 – Рефакторинг і обрані методи
+
+
+Рисунок Б.4 – Rename Method: ім’я calc не пояснює дію
+
+
+Рисунок Б.5 – Rename Method: ім’я описує результат
+
+
+Рисунок Б.6 – Remove Parameter: невикористаний параметр currency
+
+
+Рисунок Б.7 – Remove Parameter: метод без зайвого параметра
+
+
+Рисунок Б.8 – Add Parameter: метод не знає про пільгові дні
+
+
+Рисунок Б.9 – Add Parameter: новий параметр зі значенням за замовчуванням
+
+
+Рисунок Б.10 – Інструменти та перевірка результату
+
+
+Рисунок Б.11 – Висновки
+
+
+Рисунок Б.12 – Використані джерела
+ДОДАТОК В
+Програмний код
+В.1 Метод calc до перейменування (Rename Method)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L5-L19
+ 5  module RenameMethodBefore
+ 6    class Loan
+ 7      DAILY_RATE = 5
+ 8
+ 9      def initialize(due_on, returned_on)
+10        @due_on = due_on
+11        @returned_on = returned_on
+12      end
+13
+14      def calc
+15        days = (@returned_on - @due_on).to_i
+16        days.positive? ? days * DAILY_RATE : 0
+17      end
+18    end
+19  end
+В.2 Метод overdue_fine після перейменування (Rename Method)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L23-L44
+23  module RenameMethodAfter
+24    class Loan
+25      DAILY_RATE = 5
+26
+27      def initialize(due_on, returned_on)
+28        @due_on = due_on
+29        @returned_on = returned_on
+30      end
+31
+32      def overdue_fine
+33        days = (@returned_on - @due_on).to_i
+34        days.positive? ? days * DAILY_RATE : 0
+35      end
+36
+37      # @deprecated Use {#overdue_fine} instead.
+38      def calc
+39        warn 'calc is deprecated, use overdue_fine',
+40             uplevel: 1
+41        overdue_fine
+42      end
+43    end
+44  end
+В.3 Метод overdue_fine до видалення параметра (Remove Parameter)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L48-L65
+48  module RemoveParameterBefore
+49    class Loan
+50      def initialize(due_on, returned_on)
+51        @due_on = due_on
+52        @returned_on = returned_on
+53      end
+54
+55      def overdue_fine(daily_rate, currency)
+56        overdue_days * daily_rate
+57      end
+58
+59      private
+60
+61      def overdue_days
+62        [(@returned_on - @due_on).to_i, 0].max
+63      end
+64    end
+65  end
+В.4 Метод overdue_fine після видалення параметра (Remove Parameter)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L69-L86
+69  module RemoveParameterAfter
+70    class Loan
+71      def initialize(due_on, returned_on)
+72        @due_on = due_on
+73        @returned_on = returned_on
+74      end
+75
+76      def overdue_fine(daily_rate)
+77        overdue_days * daily_rate
+78      end
+79
+80      private
+81
+82      def overdue_days
+83        [(@returned_on - @due_on).to_i, 0].max
+84      end
+85    end
+86  end
+В.5 Метод overdue_fine до додавання параметра (Add Parameter)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L90-L107
+ 90  module AddParameterBefore
+ 91    class Loan
+ 92      def initialize(due_on, returned_on)
+ 93        @due_on = due_on
+ 94        @returned_on = returned_on
+ 95      end
+ 96
+ 97      def overdue_fine(daily_rate)
+ 98        overdue_days * daily_rate
+ 99      end
+100
+101      private
+102
+103      def overdue_days
+104        [(@returned_on - @due_on).to_i, 0].max
+105      end
+106    end
+107  end
+В.6 Метод overdue_fine після додавання параметра (Add Parameter)
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L111-L128
+111  module AddParameterAfter
+112    class Loan
+113      def initialize(due_on, returned_on)
+114        @due_on = due_on
+115        @returned_on = returned_on
+116      end
+117
+118      def overdue_fine(daily_rate, grace_days: 0)
+119        [overdue_days - grace_days, 0].max * daily_rate
+120      end
+121
+122      private
+123
+124      def overdue_days
+125        [(@returned_on - @due_on).to_i, 0].max
+126      end
+127    end
+128  end
+В.7 Клас Loan після застосування трьох методів
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L132-L166
+132  module Library
+133    # Book loan with the overdue fine calculation.
+134    class Loan
+135      attr_reader :due_on, :returned_on
+136
+137      def initialize(due_on, returned_on)
+138        @due_on = due_on
+139        @returned_on = returned_on
+140      end
+141
+142      # Calculates the fine for a late return.
+143      #
+144      # @param daily_rate [Integer] fine for one overdue day
+145      # @param grace_days [Integer] days without a fine
+146      # @return [Integer] fine amount
+147      # @example
+148      #   loan.overdue_fine(5, grace_days: 2) #=> 10
+149      def overdue_fine(daily_rate, grace_days: 0)
+150        [overdue_days - grace_days, 0].max * daily_rate
+151      end
+152
+153      # @deprecated Use {#overdue_fine} instead.
+154      def calc(daily_rate, _currency = nil)
+155        warn 'calc is deprecated, use overdue_fine',
+156             uplevel: 1
+157        overdue_fine(daily_rate)
+158      end
+159
+160      private
+161
+162      def overdue_days
+163        [(returned_on - due_on).to_i, 0].max
+164      end
+165    end
+166  end
+В.8 Модульні тести RSpec
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L170-L197
+170  if defined?(RSpec)
+171    RSpec.describe Library::Loan do
+172      subject(:loan) { described_class.new(Date.new(2026, 11, 1), Date.new(2026, 11, 5)) }
+173
+174      describe '#overdue_fine' do
+175        it 'charges the daily rate for each overdue day' do
+176          expect(loan.overdue_fine(5)).to eq(20)
+177        end
+178
+179        it 'skips grace days' do
+180          fine = loan.overdue_fine(5, grace_days: 2)
+181          expect(fine).to eq(10)
+182        end
+183
+184        it 'returns zero for a return before the due date' do
+185          early = described_class.new(Date.new(2026, 11, 5), Date.new(2026, 11, 1))
+186          expect(early.overdue_fine(5)).to eq(0)
+187        end
+188      end
+189
+190      describe '#calc' do
+191        it 'returns the same result as the new method' do
+192          expect { expect(loan.calc(5, 'UAH')).to eq(loan.overdue_fine(5)) }
+193            .to output(/deprecated/).to_stderr
+194        end
+195      end
+196    end
+197  end
+В.9 Перевірка збереження поведінки
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract2/pzpi-24-5-yavorska-karina-pract2/code-examples-refactoring-methods.rb#L201-L231
+201  module Compare
+202    def self.random_loan(random)
+203      due_on = Date.new(2026, 1, 1) + random.rand(0..300)
+204      [due_on, due_on + random.rand(-10..30)]
+205    end
+206
+207    def self.same_result?(due_on, returned_on)
+208      rate = RenameMethodBefore::Loan::DAILY_RATE
+209      [
+210        RenameMethodBefore::Loan.new(due_on, returned_on).calc,
+211        RenameMethodAfter::Loan.new(due_on, returned_on).overdue_fine,
+212        RemoveParameterBefore::Loan.new(due_on, returned_on).overdue_fine(rate, 'UAH'),
+213        RemoveParameterAfter::Loan.new(due_on, returned_on).overdue_fine(rate),
+214        AddParameterBefore::Loan.new(due_on, returned_on).overdue_fine(rate),
+215        AddParameterAfter::Loan.new(due_on, returned_on).overdue_fine(rate)
+216      ].uniq.size == 1
+217    end
+218
+219    def self.run
+220      random = Random.new(42)
+221      loans = Array.new(10_000) { random_loan(random) }
+222      day = Date.new(2026, 11, 1)
+223      loans += [[day, day], [day, day - 1], [day, day + 1]]
+224      mismatches = loans.reject { |due_on, returned_on| same_result?(due_on, returned_on) }
+225
+226      puts "Checked loans: #{loans.size}"
+227      puts "Mismatches: #{mismatches.size}"
+228    end
+229  end
+230
+231  Compare.run if $PROGRAM_NAME == __FILE__
