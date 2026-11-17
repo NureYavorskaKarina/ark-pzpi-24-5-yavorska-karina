@@ -1,0 +1,378 @@
+Харківський національний університет радіоелектроніки
+Факультет комп’ютерних наук
+Катедра програмної інженерії
+ЗВІТ
+до практичного завдання № 1
+з дисципліни «Аналіз та рефакторинґ коду»
+на тему: «Правила оформлення програмного коду мовою Ruby»
+Виконала
+ст. гр. ПЗПІ-24-5
+Яворська Каріна
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+Харків 2026
+1 ІСТОРІЯ ЗМІН
+Зміни, внесені до звіту під час виконання практичного завдання, наведено в таблиці 1.1.
+Таблиця 1.1 – Історія змін звіту
+№
+Дата
+Версія звіту
+Опис змін та виправлень
+1
+26.10.2026
+0.1
+Створено розділ «Завдання»
+2
+27.10.2026
+0.2
+Створено розділ «Опис виконаної роботи»
+3
+27.10.2026
+0.3
+Додано розділи «Висновки», «Використані джерела» та додатки А, Б і В
+4
+16.11.2026
+0.4
+Приклади коду об’єднано в один файл, оновлено додаток В
+2 ЗАВДАННЯ
+Метою роботи є ознайомлення з рекомендаціями щодо написання чистого, зрозумілого та зручного для супроводу коду мовою Ruby і набуття навичок аналізу та рефакторингу коду. Для цього потрібно було дослідити правила структурування проєкту, форматування, іменування, коментування та документування коду, проілюструвати їх прикладами з поясненнями, розглянути конвенції та інструменти перевірки стилю, розробку через тестування й автоматизацію контролю якості, а також підготувати презентацію, відеодоповідь і звіт.
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+3.1 Важливість правил оформлення коду
+Для виконання роботи обрано мову Ruby. На відміну від Python, де діє офіційний стандарт PEP 8, у Ruby офіційного стандарту оформлення коду немає. Фактичним стандартом є спільнотний Ruby Style Guide, який у 2011 році започаткував Б. Батсов [1]; на його основі побудовано корпоративні гайди Shopify, GitHub та Airbnb. Код читають значно частіше, ніж пишуть, тому єдиний для команди стиль заощаджує час: такий код легше читати й перевіряти, а у змінах видно правки логіки, а не форматування. Ruby дозволяє записати одну дію кількома способами, наприклад цикл через for або через метод each, і гайд закріплює один із них. Ruby є динамічною мовою, тому більшість помилок проявляється лише під час виконання програми, і частину з них заздалегідь знаходять інструменти перевірки стилю.
+Рекомендації продемонстровано на навчальному прикладі розрахунку вартості замовлення інтернет-магазину; усі фрагменти коду зібрано в одному файлі code-examples-code-conventions.rb у репозиторії GitHub (додаток В). Презентація складається з 13 слайдів (рисунки з Б.1 по Б.13), значення правил оформлення показано на рисунку Б.2.
+3.2 Структура програмного коду
+Типовий Ruby-проєкт містить теку lib з основним кодом і теку spec або test з тестами, яка повторює структуру lib [2]. Кожен клас або модуль розміщують в окремому файлі, а шлях до файлу відповідає простору імен: файл lib/my_gem/user.rb містить клас MyGem::User [1]. У фреймворку Rails ця відповідність обов’язкова, оскільки на ній ґрунтується автоматичне завантаження класів інструментом Zeitwerk. Споріднені класи об’єднують у модуль, який слугує простором імен; у прикладі це модуль Shop.
+Усередині класу Ruby Style Guide рекомендує сталий порядок частин: міксини (модулі, підключені через include), константи, атрибути, конструктор, публічні методи і наприкінці приватні методи. Секції класу розділяють порожніми рядками та ключовим словом private, а не коментарями-розділювачами, а завеликий клас поділяють на менші класи або модулі. Клас Shop::OrderCalculator, оформлений за цими правилами, наведено в розділі В.1 додатка В, порядок частин класу наведено в розділі В.4.1, слайд зображено на рисунку Б.3.
+3.3 Форматування коду
+Ruby Style Guide рекомендує відступ у два пробіли без символів табуляції й обмежує довжину рядка 80 символами, тоді як RuboCop за замовчуванням дозволяє 120 символів [3]. Метод має бути не довшим за 10 рядків, а вкладеність не глибшою за три рівні. Навколо операторів і після ком ставлять пробіли. Суперечка про розташування фігурних дужок (стилі Allman і K&R), характерна для C-подібних мов, у Ruby не виникає, оскільки блоки закриваються ключовим словом end. Натомість діє правило: фігурні дужки використовують для однорядкових блоків, а конструкцію do…end для багаторядкових. Явний return у кінці методу не пишуть, оскільки метод повертає значення останнього виразу. Код до і після форматування наведено в розділі В.4.2 додатка В, слайд зображено на рисунку Б.4.
+3.4 Правила іменування
+Стиль імені залежить від типу ідентифікатора: змінні, методи й файли записують у snake_case, класи й модулі у CamelCase, а константи у SCREAMING_SNAKE_CASE [1]. Метод, що повертає логічне значення, закінчується знаком питання, наприклад vip?, а знак оклику позначає небезпечну версію методу, наприклад save!. Префікси is_ і get_ не використовують: знак питання вже вказує на логічне значення, а атрибут читають за іменем без префікса, наприклад user.name. Префікс is_ виявляє перевірка RuboCop Naming/PredicatePrefix [3]. Ідентифікатори записують англійською мовою, а числа без пояснення замінюють іменованими константами: у класі OrderCalculator знижку записано константою VIP_DISCOUNT, а обмеження кількості товарів константою MAX_ITEMS. Код наведено в розділі В.1 додатка В, слайд зображено на рисунку Б.5.
+3.5 Коментарі
+Ruby Style Guide вимагає насамперед писати код, зрозумілий без коментарів: імена й структура важливіші за пояснення [1]. Коментар пояснює причину рішення, а не повторює код. У прикладі коментар increment counter переказує код і нічого не додає, тоді як коментар перед викликом dup пояснює, чому об’єкт копіюють перед зміною. Застарілий коментар оновлюють або видаляють, бо він вводить в оману. Для позначок використовують анотації TODO, FIXME, OPTIMIZE, HACK і REVIEW, які пишуть рядком вище коду. Код наведено в розділі В.4.3 додатка В, слайд зображено на рисунку Б.6.
+3.6 Документування коду
+Для документування API Ruby Style Guide рекомендує інструмент YARD, сумісний із вбудованим у Ruby інструментом RDoc [4, 5]. Опис методу пишуть у коментарі над ним, а теги задають структуру: @param описує параметр і його тип, @return описує результат, @raise можливий виняток, а @example приклад виклику [4]. Тип у квадратних дужках лише документує домовленість, оскільки Ruby його не перевіряє. Команда yard doc генерує HTML-документацію, а перевірка RuboCop Style/Documentation вимагає коментар-опис над кожним класом верхнього рівня. Документацію методів discount і total_price наведено в розділах В.4.4 і В.1 додатка В, слайд зображено на рисунку Б.7.
+3.7 Конвенції та інструменти перевірки стилю
+Корпоративні гайди здебільшого збігаються з Ruby Style Guide, але розходяться в деталях; відмінності наведено в таблиці 3.1.
+Таблиця 3.1 – Відмінності між гайдами стилю Ruby
+Гайд або інструмент
+Довжина рядка
+Лапки за замовчуванням
+Ruby Style Guide
+80
+одинарні
+RuboCop
+120
+одинарні
+Airbnb
+100
+не визначено
+Shopify
+120
+подвійні
+Standard
+не перевіряється
+подвійні
+Тому команда фіксує обрані правила у файлі .rubocop.yml. Головним інструментом перевірки стилю в Ruby є RuboCop, який одночасно є лінтером і форматером; команда rubocop -a автоматично виправляє безпечні порушення [3]. StandardRB є надбудовою над RuboCop із фіксованим набором правил, які не налаштовуються [6]. Аналогічні інструменти існують і для інших мов: Pylint і Black для Python, ESLint і Prettier для JavaScript, ClangFormat для C++, Checkstyle для Java. Налаштування RuboCop наведено в розділі В.4.7 додатка В, слайд зображено на рисунку Б.8.
+3.8 Розробка через тестування (TDD)
+Розробка через тестування, описана К. Беком [7], складається з циклу «червоний, зелений, рефакторинг»: спочатку пишуть тест, який не проходить, потім мінімальний код для його проходження, а далі покращують код, зберігаючи успішні тести. Тест, написаний до коду, змушує спочатку продумати інтерфейс; за М. Фаулером, найчастішою помилкою є пропуск кроку рефакторингу [8]. У Ruby поширені фреймворк RSpec, для якого існує окремий гайд оформлення тестів [9], і Minitest, що входить до стандартної бібліотеки [10]. У прикладі тест RSpec перевіряє, що метод FizzBuzz.call повертає Fizz для числа 9. Код наведено в розділі В.4.5 додатка В, слайд зображено на рисунку Б.9.
+3.9 Автоматизація контролю якості
+Щоб перевірки не залежали від уважності розробника, їх автоматизують на трьох рівнях. Платформи статичного аналізу SonarQube і Codacy збирають звіти RuboCop та інших допоміжних інструментів і показують загальну якість проєкту. Git-хук, налаштований інструментом Lefthook або Overcommit, запускає RuboCop для змінених файлів перед кожним комітом [11]. Сервіс безперервної інтеграції GitHub Actions для кожного pull request встановлює Ruby, запускає RuboCop і тести [12]. Git-хук можна обійти командою git commit --no-verify, тому остаточну перевірку виконує CI. Налаштування git-хука й сценарій безперервної інтеграції наведено в розділах В.4.8 і В.4.9 додатка В, слайд зображено на рисунку Б.10.
+3.10 Приклад оформлення коду: до і після виправлення
+Як приклад узято метод, що обчислює суму замовлення зі знижкою 20 % для VIP-клієнта. Початкова версія обчислює правильно, але порушує більшість описаних правил: ім’я CalcPrice записано в CamelCase, імена u, t, i нічого не пояснюють, відступ становить чотири пробіли, умови вкладено, суму накопичено в циклі for, число 0.8 не має назви, ознаку VIP перевіряє метод із префіксом is_, а результат повертає явний return.
+У виправленій версії знижку винесено в константу VIP_DISCOUNT, вкладену умову замінено раннім виходом із методу (guard clause), цикл for методом sum, а is_vip предикатом vip?. Перевірка в модулі Compare (розділ В.4.6 додатка В) підтвердила, що на 2003 замовленнях (2000 випадкових і 3 граничні) результати обох версій збігаються. Код до і після виправлення наведено в розділах В.2 і В.3 додатка В, слайд зображено на рисунку Б.11. Висновки презентації показано на рисунку Б.12, а перелік джерел на рисунку Б.13.
+4 ВИСНОВКИ
+Під час виконання практичної роботи розглянуто основні рекомендації щодо написання чистого, зрозумілого та зручного для супроводу коду мовою Ruby: структуру проєкту, форматування, іменування, коментування й документування коду, конвенції стилю та інструменти їх перевірки. Кожну рекомендацію проілюстровано фрагментами коду та пояснено, як вона впливає на супровід програми.
+З’ясовано, що в Ruby немає офіційного стандарту оформлення коду, а фактичним стандартом є Ruby Style Guide, правила якого перевіряє RuboCop, і що гайди розходяться в деталях, тому вибір команди фіксують у конфігураційному файлі. Отримано навички роботи з RuboCop, YARD і RSpec, налаштування автоматичних перевірок у git-хуку та CI, а також виправлення коду без зміни його поведінки, що підтверджено автоматичним порівнянням результатів.
+5 ВИКОРИСТАНІ ДЖЕРЕЛА
+1. Batsov B. The Ruby Style Guide. URL: https://rubystyle.guide (дата звернення: 26.10.2026).
+2. Gem patterns. RubyGems Guides. URL: https://guides.rubygems.org/patterns/ (дата звернення: 26.10.2026).
+3. RuboCop Documentation : Cops. URL: https://docs.rubocop.org/rubocop/latest/cops.html (дата звернення: 26.10.2026).
+4. Segal L. YARD Tags Overview. RubyDoc.info. URL: https://rubydoc.info/gems/yard/file/docs/Tags.md (дата звернення: 26.10.2026).
+5. RDoc : Ruby Documentation System. URL: https://ruby.github.io/rdoc/ (дата звернення: 26.10.2026).
+6. Standard : Ruby’s linter and formatter. URL: https://github.com/standardrb/standard (дата звернення: 26.10.2026).
+7. Beck K. Test-Driven Development : By Example. Boston : Addison-Wesley, 2002. 240 p.
+8. Fowler M. Test Driven Development. martinfowler.com. URL: https://martinfowler.com/bliki/TestDrivenDevelopment.html (дата звернення: 26.10.2026).
+9. The RSpec Style Guide. URL: https://github.com/rubocop/rspec-style-guide (дата звернення: 26.10.2026).
+10. Davis R. minitest. URL: https://github.com/minitest/minitest (дата звернення: 26.10.2026).
+11. Lefthook : Git hooks manager. URL: https://lefthook.dev/ (дата звернення: 26.10.2026).
+12. ruby/setup-ruby. URL: https://github.com/ruby/setup-ruby (дата звернення: 26.10.2026).
+ДОДАТОК А
+Відеозапис
+Відеозапис доповіді на YouTube: https://www.youtube.com/watch?v=MxSB81KwwQU
+Хронологічний опис відеозапису:
+00:00 Титульний слайд, тема доповіді
+00:13 Важливість правил оформлення коду
+01:52 Структура програмного коду
+03:16 Форматування коду
+04:25 Правила іменування
+05:28 Використання коментарів
+06:15 Документування коду
+07:15 Конвенції та інструменти стилю в Ruby
+08:56 Розробка через тестування (TDD)
+10:04 Автоматизація контролю якості
+11:15 Приклад оформлення коду
+12:31 Висновки
+13:36 Використані джерела
+ДОДАТОК Б
+Слайди презентації
+
+Рисунок Б.1 – Титульний слайд
+
+Рисунок Б.2 – Важливість правил оформлення коду
+
+Рисунок Б.3 – Структура програмного коду
+
+Рисунок Б.4 – Форматування коду
+
+Рисунок Б.5 – Правила іменування
+
+Рисунок Б.6 – Використання коментарів
+
+Рисунок Б.7 – Документування коду
+
+Рисунок Б.8 – Конвенції та інструменти стилю в Ruby
+
+Рисунок Б.9 – Розробка через тестування (TDD)
+
+Рисунок Б.10 – Автоматизація контролю якості
+
+Рисунок Б.11 – Приклад оформлення коду до і після виправлення
+
+Рисунок Б.12 – Висновки
+
+Рисунок Б.13 – Використані джерела
+ДОДАТОК В
+Програмний код
+В.1 Приклад оформлення програмного коду
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L3-L46
+ 3  module Shop
+ 4    # Calculates order totals for registered users.
+ 5    class OrderCalculator
+ 6      include Comparable
+ 7
+ 8      VIP_DISCOUNT = 0.8
+ 9      MAX_ITEMS = 100
+10
+11      attr_reader :user, :items
+12
+13      def initialize(user, items)
+14        @user = user
+15        @items = items
+16      end
+17
+18      # Calculates the order total with the VIP discount applied.
+19      #
+20      # @return [Float, nil] order total, or nil if there is no user
+21      # @raise [ArgumentError] if the order has too many items
+22      # @example
+23      #   OrderCalculator.new(user, items).total_price #=> 120.0
+24      def total_price
+25        return unless user
+26        raise ArgumentError, 'Too many items' if items.size > MAX_ITEMS
+27
+28        total = items.sum(&:price)
+29        user.vip? ? total * VIP_DISCOUNT : total
+30      end
+31
+32      def empty?
+33        items.empty?
+34      end
+35
+36      def <=>(other)
+37        total_price <=> other.total_price
+38      end
+39
+40      private
+41
+42      def item_names
+43        items.map(&:name)
+44      end
+45    end
+46  end
+В.2 Приклад програмного коду до рефакторингу
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L50-L59
+50  module Before
+51    def self.CalcPrice(u,items)
+52        if u!=nil
+53            t=0
+54            for i in items do t+=i.price end
+55            if u.is_vip then t=t*0.8 end
+56            return t
+57        end
+58    end
+59  end
+В.3 Приклад програмного коду після рефакторингу
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L63-L72
+63  module After
+64    VIP_DISCOUNT = 0.8
+65
+66    def self.total_price(user, items)
+67      return unless user
+68
+69      total = items.sum(&:price)
+70      user.vip? ? total * VIP_DISCOUNT : total
+71    end
+72  end
+В.4 Інші розглянуті фрагменти програмного коду
+В.4.1 Порядок частин класу
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L76-L99
+76  module MyGem
+77    # Library user (file lib/my_gem/user.rb).
+78    class User
+79      include Comparable
+80
+81      MAX_AGE = 150
+82
+83      attr_reader :name
+84
+85      def initialize(name)
+86        @name = name
+87      end
+88
+89      def <=>(other)
+90        name <=> other.name
+91      end
+92
+93      private
+94
+95      def normalized_name
+96        name.strip.downcase
+97      end
+98    end
+99  end
+В.4.2 Форматування коду
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L103-L126
+103  module Formatting
+104    TAX = 5
+105
+106    # Bad: 4-space indent, no spaces around operators, explicit return.
+107    def self.total_bad(price,qty)
+108        sum=price*qty+TAX
+109        return sum
+110    end
+111
+112    # Good.
+113    def self.total(price, qty)
+114      price * qty + TAX
+115    end
+116
+117    def self.print_names(names)
+118      names.each { |n| puts n }
+119    end
+120
+121    def self.upcase_names(names)
+122      names.map do |n|
+123        n.upcase
+124      end
+125    end
+126  end
+В.4.3 Коментарі та анотації
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L130-L142
+130  module Comments
+131    def self.next_counter(counter)
+132      counter += 1 # increment counter
+133    end
+134
+135    def self.prepare(response)
+136      # API returns a frozen object,
+137      # so dup it before changing.
+138      data = response.dup
+139      # FIXME: Crashes since v3.2.1.
+140      data << 'checked'
+141    end
+142  end
+В.4.4 Документування методу за допомогою YARD
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L146-L160
+146  module Pricing
+147    # Calculates the price after a discount.
+148    #
+149    # @param price [Numeric] base price
+150    # @param percent [Integer] 0..100
+151    # @return [Float] discounted price
+152    # @raise [ArgumentError] if percent > 100
+153    # @example
+154    #   discount(200, 10) #=> 180.0
+155    def self.discount(price, percent)
+156      raise ArgumentError if percent > 100
+157
+158      price * (100 - percent) / 100.0
+159    end
+160  end
+В.4.5 Модульний тест RSpec і реалізація
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L164-L176
+164  module FizzBuzz
+165    def self.call(n) = (n % 3).zero? ? 'Fizz' : n.to_s
+166  end
+167
+168  if defined?(RSpec)
+169    RSpec.describe FizzBuzz do
+170      describe '.call' do
+171        it 'returns Fizz for 9' do
+172          expect(FizzBuzz.call(9)).to eq('Fizz')
+173        end
+174      end
+175    end
+176  end
+В.4.6 Перевірка еквівалентності коду до і після рефакторингу
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L180-L207
+180  module Compare
+181    User = Struct.new(:vip) do
+182      def vip? = vip
+183      def is_vip = vip
+184    end
+185
+186    Item = Struct.new(:price)
+187
+188    def self.random_order(random)
+189      user = random.rand < 0.1 ? nil : User.new(random.rand < 0.5)
+190      items = Array.new(random.rand(0..5)) { Item.new(random.rand(1..900)) }
+191      [user, items]
+192    end
+193
+194    def self.run
+195      random = Random.new(42)
+196      orders = Array.new(2000) { random_order(random) }
+197      orders += [[nil, []], [User.new(true), []], [User.new(false), [Item.new(1000)]]]
+198      mismatches = orders.reject do |user, items|
+199        Before.CalcPrice(user, items) == After.total_price(user, items)
+200      end
+201
+202      puts "Checked orders: #{orders.size}"
+203      puts "Mismatches: #{mismatches.size}"
+204    end
+205  end
+206
+207  Compare.run if $PROGRAM_NAME == __FILE__
+В.4.7 Налаштування RuboCop
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L211-L216
+211  # # .rubocop.yml
+212  # AllCops:
+213  #   TargetRubyVersion: 3.4
+214  #   NewCops: enable
+215  # Layout/LineLength:
+216  #   Max: 120
+В.4.8 Git-хук для перевірки стилю перед комітом
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L220-L224
+220  # # lefthook.yml
+221  # pre-commit:
+222  #   commands:
+223  #     rubocop:
+224  #       run: bundle exec rubocop {staged_files}
+В.4.9 Конвеєр безперервної інтеграції
+GitHub репозиторій: https://github.com/NureYavorskaKarina/ark-pzpi-24-5-yavorska-karina/blob/main/Pract1/pzpi-24-5-yavorska-karina-pract1/code-examples-code-conventions.rb#L228-L242
+228  # # .github/workflows/ci.yml
+229  # name: CI
+230  #
+231  # on: [push, pull_request]
+232  #
+233  # jobs:
+234  #   check:
+235  #     runs-on: ubuntu-latest
+236  #     steps:
+237  #       - uses: actions/checkout@v4
+238  #       - uses: ruby/setup-ruby@v1
+239  #         with:
+240  #           bundler-cache: true
+241  #       - run: bundle exec rubocop
+242  #       - run: bundle exec rspec
